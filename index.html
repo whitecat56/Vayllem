@@ -1,49 +1,51 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<title>Ulug'bek Farm</title>
-
 <style>
-:root {
-  --bg: #020617;
-  --card: rgba(15,23,42,0.6);
-  --accent: #22c55e;
-  --text: #e2e8f0;
-}
-
 body {
   margin:0;
-  font-family: -apple-system, BlinkMacSystemFont;
-  background: radial-gradient(circle at top, #0f172a, #020617);
-  color: var(--text);
+  font-family: system-ui;
+  background:#020617;
+  color:white;
 }
 
 /* HEADER */
 .header {
-  padding:20px;
-  font-size:24px;
+  padding:18px;
+  font-size:22px;
   font-weight:700;
-  display:flex;
-  justify-content:space-between;
 }
 
 /* SEARCH */
 .search {
-  padding:10px 15px;
+  padding:10px;
 }
-
 .search input {
   width:100%;
   padding:14px;
   border-radius:14px;
   border:none;
-  background:rgba(255,255,255,0.05);
-  backdrop-filter: blur(10px);
+  background:#0f172a;
   color:white;
+}
+
+/* TABS */
+.tabs {
+  display:flex;
+  overflow-x:auto;
+  gap:10px;
+  padding:10px;
+}
+.tab {
+  padding:8px 14px;
+  background:#0f172a;
+  border-radius:20px;
+  cursor:pointer;
+  white-space:nowrap;
 }
 
 /* GRID */
@@ -51,48 +53,55 @@ body {
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:12px;
-  padding:15px;
+  padding:10px;
 }
 
 /* CARD */
 .card {
-  background: var(--card);
-  backdrop-filter: blur(20px);
-  border-radius:18px;
-  padding:12px;
+  background:#0f172a;
+  border-radius:16px;
+  padding:10px;
   transition:0.3s;
 }
-
 .card:hover {
-  transform: translateY(-5px) scale(1.02);
+  transform:scale(1.03);
 }
 
-/* PRICE */
-.price {
-  color: var(--accent);
-  font-weight:bold;
-  margin-top:5px;
+/* IMAGE */
+.img {
+  width:100%;
+  height:120px;
+  border-radius:12px;
+  object-fit:cover;
 }
 
 /* BUTTON */
 .btn {
-  margin-top:10px;
-  padding:10px;
-  border-radius:12px;
+  margin-top:8px;
+  padding:8px;
+  border-radius:10px;
   border:none;
   width:100%;
-  font-weight:600;
-  cursor:pointer;
 }
 
 .buy {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  color:white;
+  background:#22c55e;
 }
 
 .fav {
-  background: rgba(255,255,255,0.05);
+  background:#1e293b;
   color:white;
+}
+
+/* FLOAT CART */
+.cart {
+  position:fixed;
+  bottom:70px;
+  right:15px;
+  background:#22c55e;
+  padding:12px;
+  border-radius:50%;
+  font-size:18px;
 }
 
 /* NAV */
@@ -103,41 +112,42 @@ body {
   display:flex;
   justify-content:space-around;
   padding:10px;
-  background: rgba(2,6,23,0.8);
-  backdrop-filter: blur(20px);
+  background:#020617;
 }
 
-.nav div {
-  cursor:pointer;
+/* SKELETON */
+.skeleton {
+  background: linear-gradient(90deg,#0f172a,#1e293b,#0f172a);
+  animation: loading 1.2s infinite;
+  height:160px;
+  border-radius:12px;
 }
 
-/* ANIM */
-.fade {
-  animation: fadeIn 0.4s ease;
-}
-
-@keyframes fadeIn {
-  from {opacity:0; transform:translateY(10px);}
-  to {opacity:1; transform:translateY(0);}
+@keyframes loading {
+  0%{background-position:-200px}
+  100%{background-position:200px}
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">
-💊 Ulug'bek Farm
-</div>
+<div class="header">💊 Ulug'bek Farm</div>
 
 <div class="search">
 <input placeholder="🔎 Поиск..." oninput="search(this.value)">
 </div>
 
-<div id="products" class="grid fade"></div>
+<div class="tabs" id="tabs"></div>
+
+<div id="products" class="grid"></div>
+
+<div class="cart" onclick="openCart()">
+🛒 <span id="count">0</span>
+</div>
 
 <div class="nav">
 <div onclick="load()">🏠</div>
-<div onclick="openCart()">🛒</div>
 <div onclick="showFav()">❤️</div>
 </div>
 
@@ -153,26 +163,57 @@ let fav = [];
 
 /* LOAD */
 async function load(){
+  showSkeleton();
+
   const res = await fetch(API + "/products");
   products = await res.json();
+
   render(products);
+  loadTabs();
+}
+
+/* SKELETON */
+function showSkeleton(){
+  let html="";
+  for(let i=0;i<6;i++){
+    html += `<div class="skeleton"></div>`;
+  }
+  document.getElementById("products").innerHTML = html;
+}
+
+/* TABS */
+function loadTabs(){
+  let cats = ["Все","Популярное","Антибиотики","Витамины"];
+
+  let html="";
+  cats.forEach(c=>{
+    html += `<div class="tab" onclick="filterCat('${c}')">${c}</div>`;
+  });
+
+  document.getElementById("tabs").innerHTML = html;
+}
+
+function filterCat(c){
+  if(c=="Все") return render(products);
+  render(products.filter(p=>p.name.includes(c)));
 }
 
 /* RENDER */
 function render(list){
-  let html = "";
+  let html="";
   list.forEach(p=>{
     html += `
-    <div class="card fade">
+    <div class="card">
+      <img class="img" src="https://picsum.photos/200?random=${p.id}">
       <b>${p.name}</b>
-      <div class="price">${p.price} сум</div>
+      <div>${p.price} сум</div>
 
       <button class="btn buy" onclick="addCart(${p.id})">
         🛒 Купить
       </button>
 
       <button class="btn fav" onclick="addFav(${p.id})">
-        ❤️ В избранное
+        ❤️
       </button>
     </div>`;
   });
@@ -182,34 +223,35 @@ function render(list){
 
 /* SEARCH */
 function search(q){
-  q = q.toLowerCase();
+  q=q.toLowerCase();
   render(products.filter(p=>p.name.toLowerCase().includes(q)));
 }
 
 /* CART */
 function addCart(id){
   cart.push(id);
-  tg.HapticFeedback.impactOccurred("medium");
+  updateCart();
+  tg.HapticFeedback.impactOccurred("light");
+}
+
+function updateCart(){
+  document.getElementById("count").innerText = cart.length;
 }
 
 function openCart(){
-  tg.sendData(JSON.stringify({
-    type:"cart",
-    data:cart
-  }));
+  tg.sendData(JSON.stringify(cart));
 }
 
-/* FAVORITES */
+/* FAV */
 function addFav(id){
   fav.push(id);
-  tg.showAlert("Добавлено ❤️");
+  tg.showAlert("❤️ Добавлено");
 }
 
 function showFav(){
   render(products.filter(p=>fav.includes(p.id)));
 }
 
-/* START */
 load();
 </script>
 
