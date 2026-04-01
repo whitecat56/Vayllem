@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #0f172a;
+      color: white;
+    }
+    button {
+      padding: 15px;
+      border-radius: 10px;
+      background: #22c55e;
+      border: none;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>💊 Ulug'bek Farm</h1>
+<p>Онлайн аптека</p>
+
+<button onclick="buy()">Купить</button>
+
+<script>
+  const tg = window.Telegram.WebApp;
+  tg.expand();
+
+  function buy() {
+    tg.sendData("buy_clicked");
+  }
+</script>
+
+</body>
+</html> 
