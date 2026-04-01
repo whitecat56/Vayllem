@@ -1,40 +1,167 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    body {
-      font-family: Arial;
-      text-align: center;
-      background: #0f172a;
-      color: white;
-    }
-    button {
-      padding: 15px;
-      border-radius: 10px;
-      background: #22c55e;
-      border: none;
-      font-size: 16px;
-      margin-top: 20px;
-    }
-  </style>
+<meta charset="UTF-8">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<style>
+body {
+  margin:0;
+  font-family: system-ui;
+  background:#020617;
+  color:white;
+}
+
+.header {
+  padding:16px;
+  font-size:22px;
+  font-weight:700;
+}
+
+.search {
+  padding:10px;
+}
+
+input {
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:none;
+  background:#0f172a;
+  color:white;
+}
+
+.grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  padding:10px;
+}
+
+.card {
+  background:#0f172a;
+  padding:10px;
+  border-radius:16px;
+}
+
+.price {
+  color:#22c55e;
+  font-weight:bold;
+}
+
+.btn {
+  margin-top:10px;
+  padding:10px;
+  background:#22c55e;
+  border:none;
+  border-radius:10px;
+  width:100%;
+}
+
+.bottom {
+  position:fixed;
+  bottom:0;
+  width:100%;
+  display:flex;
+  background:#020617;
+}
+
+.tab {
+  flex:1;
+  text-align:center;
+  padding:12px;
+}
+</style>
 </head>
+
 <body>
 
-<h1>💊 Ulug'bek Farm</h1>
-<p>Онлайн аптека</p>
+<div class="header">💊 Ulug'bek Farm</div>
 
-<button onclick="buy()">Купить</button>
+<div class="search">
+  <input placeholder="🔎 Поиск..." oninput="search(this.value)">
+</div>
+
+<div id="products" class="grid"></div>
+
+<div class="bottom">
+  <div class="tab" onclick="loadProducts()">🏠</div>
+  <div class="tab" onclick="openCart()">🛒</div>
+  <div class="tab" onclick="showFav()">❤️</div>
+</div>
 
 <script>
-  const tg = window.Telegram.WebApp;
-  tg.expand();
+const tg = window.Telegram.WebApp;
+tg.expand();
 
-  function buy() {
-    tg.sendData("buy_clicked");
-  }
+let products = [];
+let cart = [];
+let favorites = [];
+
+const API = "http://127.0.0.1:8000"; // заменишь
+
+// ===== ЗАГРУЗКА =====
+async function loadProducts(){
+  const res = await fetch(API + "/products");
+  products = await res.json();
+  render(products);
+}
+
+// ===== РЕНДЕР =====
+function render(list){
+  let html = "";
+  list.forEach(p=>{
+    html += `
+    <div class="card">
+      <b>${p.name}</b><br>
+      <span class="price">${p.price} сум</span>
+      <button class="btn" onclick="addCart(${p.id})">🛒 Купить</button>
+      <button class="btn" onclick="addFav(${p.id})">❤️</button>
+    </div>`;
+  });
+  document.getElementById("products").innerHTML = html;
+}
+
+// ===== ПОИСК =====
+function search(q){
+  q = q.toLowerCase();
+  render(products.filter(p=>p.name.toLowerCase().includes(q)));
+}
+
+// ===== КОРЗИНА =====
+function addCart(id){
+  cart.push(id);
+  tg.showAlert("Добавлено 🛒");
+}
+
+function openCart(){
+  let items = products.filter(p => cart.includes(p.id));
+  let text = "🛒 Корзина:\n\n";
+  items.forEach(i=>{
+    text += i.name + " - " + i.price + "\n";
+  });
+
+  tg.sendData(JSON.stringify({
+    type:"cart",
+    data:cart
+  }));
+
+  tg.showAlert(text || "Пусто");
+}
+
+// ===== ИЗБРАННОЕ =====
+function addFav(id){
+  favorites.push(id);
+  tg.showAlert("Добавлено в избранное ❤️");
+}
+
+function showFav(){
+  render(products.filter(p=>favorites.includes(p.id)));
+}
+
+// ===== СТАРТ =====
+loadProducts();
 </script>
 
 </body>
-</html> 
+</html>
